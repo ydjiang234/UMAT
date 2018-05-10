@@ -2,8 +2,10 @@
 #define UMATCPP
 #include <iostream>
 #include <cmath>
+#include <Dense>
 //#include <aba_for_c.h>
 using namespace std;
+using namespace Eigen;
 
 void test1(double *stress, double *statev, double *ddsdde, double *sse, double *spd, double *scd,
            double *rpl, double *ddsddt, double *drplde, double *drpldt,
@@ -32,28 +34,31 @@ void test1(double *stress, double *statev, double *ddsdde, double *sse, double *
 {
     //std::cout<<<<std::endl;
     double E, anu, para1;
+    MatrixXd Stiff;
+    Vector3d Stress, dStrain;
+    Stress = Map<Vector3d>(stress);
+    dStrain = Map<Vector3d>(dstran);
+    //cout<<Stress<<endl;
+    
+
+    Stiff = MatrixXd::Zero(3,3);
     E = props[0];
     anu = props[1];
     para1 = E / (1.0 - pow(anu,2));
 
-    for (int i=0; i<3; i++) {
-        for (int j=0; j<3; j++) {
-            ddsdde[i*3+j] = 0.0;
+    Stiff(0,0) = para1;
+    Stiff(1,1) = para1;
+    Stiff(2,2) = para1 * (1.0 - anu) / 2.0;
+    Stiff(0,1) = para1 * anu;
+    Stiff(1,0) = para1 * anu;
+
+    Stress += Stiff * dStrain;
+    for (int i=0;i<*ntens;i++) {
+        for (int j=0;j<*ntens;j++) {
+            ddsdde[i*3+j] = Stiff(i,j);
         }
-    }
-    
-    ddsdde[0*3 + 0] = para1;
-    ddsdde[1*3 + 1] = para1;
-    ddsdde[2*3 + 2] = para1 * (1.0 - anu) / 2.0;
-    ddsdde[0*3 + 1] = para1 * anu;
-    ddsdde[1*3 + 0] = para1 * anu;
-
-
-
-    for (int i=0; i<3; i++) {
-        for (int j=0; j<3; j++) {
-            stress[i] = stress[i] + ddsdde[i*3+j] * dstran[j];
-        }
+        stress[i] = Stress(i);
+        dstran[i] = dStrain(i);
     }
 }
 #endif
