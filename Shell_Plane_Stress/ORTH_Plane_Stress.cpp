@@ -32,8 +32,7 @@ void test1(double *stress, double *statev, double *ddsdde, double *sse, double *
            int *ndi, int *nshr, int *ntens, int *nstatv, double *props, int *nprops, double *coords, double *drot, double *pnewdt,
            double *celent, double *dfgrd0, double *dfgrd1, int *noel, int *npt, int *layer, int *kspt, int *kstep, int *kinc)
 {
-    //std::cout<<<<std::endl;
-    double E, anu, para1;
+    double E1, E2, anu12, anu21, G12, para1;
     MatrixXd Stiff;
     Vector3d Stress, dStrain;
     Stress = Map<Vector3d>(stress);
@@ -41,16 +40,20 @@ void test1(double *stress, double *statev, double *ddsdde, double *sse, double *
     //cout<<Stress<<endl;
     
 
-    Stiff = MatrixXd::Zero(3,3);
-    E = props[0];
-    anu = props[1];
-    para1 = E / (1.0 - pow(anu,2));
+    E1 = props[0];
+    E2 = props[1];
+    G12 = props[2];
+    anu12 = props[3];
+    anu21 = E2 / E1 * anu12;
+    para1 = 1.0 - anu12 * anu21;
 
-    Stiff(0,0) = para1;
-    Stiff(1,1) = para1;
-    Stiff(2,2) = para1 * (1.0 - anu) / 2.0;
-    Stiff(0,1) = para1 * anu;
-    Stiff(1,0) = para1 * anu;
+    Stiff = MatrixXd::Zero(3,3);
+
+    Stiff(0,0) = E1 / para1;
+    Stiff(1,1) = E2 / para1;
+    Stiff(2,2) = G12;
+    Stiff(0,1) = anu21 * E1 / para1;
+    Stiff(1,0) = anu12 * E2 / para1;
 
     Stress += Stiff * dStrain;
     for (int i=0;i<*ntens;i++) {
