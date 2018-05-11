@@ -39,9 +39,6 @@ void test1(double *stress, double *statev, double *ddsdde, double *sse, double *
     Stress = Map<Vector3d>(stress);
     dStrain = Map<Vector3d>(dstran);
     //cout<<Stress<<endl;
-    //
-    //
-    
 
     Stiff = MatrixXd::Zero(3,3);
     E = props[0];
